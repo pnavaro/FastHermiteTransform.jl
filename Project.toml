@@ -1,0 +1,7 @@
+name = "FastHermiteTransform"
+uuid = "c0a8b4dd-00f9-4ec6-adac-8380509f0505"
+authors = ["Pierre Navaro <pierre.navaro@math.cnrs.fr>"]
+version = "0.1.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
