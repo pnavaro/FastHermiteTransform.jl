@@ -15,7 +15,7 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 128
+#define BIGN 1
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
@@ -35,7 +35,6 @@
 #define WL(l) (double)((-1)*GAMMA*UL(l))
 
 
-FILE *tester;
 clock_t fclock, nclock;
 
 //defines the data points
@@ -47,12 +46,11 @@ fftw_complex xk(int k) {
 //	returns.
 void oneDFileReader(char *filename, int n, double *result) {
     FILE *inputFile;
-    int x;
 
     inputFile = fopen(filename, "r");
     if(inputFile != NULL) {
-        for(x=0; x<n; ++x) {
-	        fscanf(inputFile,"%Lf",&result[x]);
+        for(int x=0; x<n; ++x) {
+	        fscanf(inputFile, "%lf",&result[x]);
 	    }
 	}
     else
@@ -268,7 +266,7 @@ void twoDTransform(double *data, int n, double* result) {
 	}
 	//transform the columns
 	double* column = (double *) fftw_malloc(sizeof(double) * n);
-    double* temp = (double *) fftw_malloc(sizeof(double) * n);
+        double* temp = (double *) fftw_malloc(sizeof(double) * n);
 	for(i=0; i<n; ++i) {
 		getColumnFromSq(result,column,i,n);
 		oneDTransform(column,temp);
@@ -283,42 +281,30 @@ void twoDTransform(double *data, int n, double* result) {
 int main(int argc, char *argv[])
 {
     int n = LITN;
-	int N = BIGN;
+    int N = BIGN;
     int i,j,x;
-    tester = fopen("doc/testing.txt", "wt+");
 
-
- 	double *data   = (double *) fftw_malloc(sizeof(double) * (n*2+1));
+    double *data   = (double *) fftw_malloc(sizeof(double) * (n*2+1));
 
     double *fancyResult = (double *) fftw_malloc(sizeof(double) * N);
-	double *naiveResult = (double *) fftw_malloc(sizeof(double) * N);
+    double *naiveResult = (double *) fftw_malloc(sizeof(double) * N);
 
-    FILE *inputFile;
-    inputFile = fopen("doc/data.txt", "wt+");
+    //srand(time(0));
+    srand(0);
+    double daConstant = pow(-1,rand()%2)*rand()/RAND_MAX;
+    printf("%lf", daConstant);
 
-	srand(time(0));
-	double daConstant = pow(-1,rand()%2)*rand()/RAND_MAX;
-	for(i=0; i<=2*n; ++i) {
-        fprintf(inputFile,"%Lf	",(double)rand()/RAND_MAX);//daConstant*1/pow(i+1,2));
-//		for(j=0; j<(n/4); ++j)
-//	        fprintf(inputFile,"%Lf	",(double)0);
-//		for(j=n/4; j<(3*n/4); ++j)
-//	   		fprintf(inputFile,"%Lf	",(double)1);
-//		for(j=(3*n/4);j<n;++j)
-//		    fprintf(inputFile,"%Lf	",(double)0);
-		fprintf(inputFile,"\n");
-	}
-
-    fclose(inputFile);
-	oneDFileReader("doc/data.txt",(2*n+1),data);
+    oneDFileReader("doc/data.txt",(2*n+1),data);
 
     double* diag = (double *) fftw_malloc(sizeof(double) * (2*n+1)*(2*n+1));
-   	memset(diag,0,sizeof(double) * (2*n+1)*(2*n+1));
-	for(i=0;i<=2*n; ++i) {
-		diag[(2*n+1)*i+i] = exp(0-pow(xk(i),2)/2);
+    memset(diag,0,sizeof(double) * (2*n+1)*(2*n+1));
+    for(i=0;i<=2*n; ++i) {
+	diag[(2*n+1)*i+i] = exp(0-pow(xk(i),2)/2);
         data[i] *= diag[(2*n+1)*i+i];
-	}
+        printf("%d %lf \n", i, data[i]);
+    }
 
+    exit(0);
 
     initFastFouriers(N);
 	initRns(N);
@@ -330,16 +316,13 @@ int main(int argc, char *argv[])
 	naiveTransform(data,naiveResult);
 	nclock-=clock();
 
-	FILE *results;
-	results=fopen("doc/results.txt","wt+");
 	for(i=0;i<N;++i){
-		fancyResult[i]*=(2*BIGC)/n;
+	fancyResult[i]*=(2*BIGC)/n;
         naiveResult[i]*=(2*BIGC)/n;
-		fprintf(results,"%.16Lf\n",fancyResult[i]);
-//        fprintf(results,"%.16Lf\n\n",naiveResult[i]);
+	printf("%.16Lf\n",fancyResult[i]);
+        printf("%.16Lf\n\n",naiveResult[i]);
 	}
-	fclose(results);
-    fprintf(stdout,"Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
+    printf("Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
 
     return 0;
 }
