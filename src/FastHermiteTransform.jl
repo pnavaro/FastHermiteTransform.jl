@@ -56,57 +56,36 @@ module FastHermiteTransform
     
         # top left is all zeros (we'll zero out everything 
         # else while we're at it.
-        result = zeros(Float64, 8*n)
+        result = zeros(Float64, 8n)
         # top right is I2n
-        result[2*n]=1;
+        result[2n]   = 1;
         # bottom left is cl*I2n
-        result[4*n]=CL(l);
+        result[4n]   = CL(l);
         # bottom right is Cn(wl,vl,ul);
-        result[6*n]   = VL(l);
-        result[6*n+1] = WL(l);
-        result[8*n-1] = UL(l);
+        result[6n]   = VL(l);
+        result[6n+1] = WL(l);
+        result[8n-1] = UL(l);
     
     end
     
     
-    function getColumnFromSq( input, output, whichColumn, n) 
-    
-    	for i in eachindex(output)
-    		output[i] = input[n*i + whichColumn];
-    	end
-    end
-    
-    function setColumnToSq( input, output, whichColumn, n)
-    	
-    	for i in eachindex(input)
-    		output[n*i+whichColumn] = input[i];
-    	end
-    
-    end
-    
-    function initRns(n)
-    	
-    	daRns 		= zeros(Float64, (n+1) * n * 8*n);
-        daRnsSize 	= n;
-        # precompute the necessary Rns
-        i = n
-     	while i>=4 
-            i /=2  
-            j = 0
-     	    while j<n
-                j += i 
-     	    	precomputeRn(i, j, daRns[8*n*(n*i+j)]);
-     		end
-     	end
 
+    # give me the first column of a circulant matrix in M.
+    function circulantVcMatrixMultiply( c, VecCpy, n, result)
+    
+         fftc = fft(c)
+    
+         fftVec = fft(VecCpy)
+    
+       	 multiply = fftc .* fftVec
+    
+         result = irfft(multiply)
+    
     end
-    
-    
+
     """
-    ```
     A B  *  E F  = AE+BG AF+BH
     C D     G H    CE+DG CF+DH
-    ```
     """
     function fourBcirculantSqMatrixMultiply( M1, M2, n, result) 
     
@@ -159,17 +138,58 @@ module FastHermiteTransform
     
     
     end
+
+    """
+     computes desired Rn
+     needed columns of circulant matrices listed vertically as top left, top right, bottom left, bottom right.
+    """
+    function precomputeRn( n, l, result) 
     
-    # give me the first column of a circulant matrix in M.
-    function circulantVcMatrixMultiply( c, VecCpy, n, result)
+        temp  = zeros(8*n);
+        temp2 = zeros(8*n);
     
-         fftc = fft(c)
+        createAn(n,n/2+l,result);
+        for i=l+n÷2-1:-1;l
+             createAn(n,i,temp);
+             fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
+             result .= temp2
+        end
+        
+       
+    end
     
-         fftVec = fft(VecCpy)
+    function initRns(n)
+    	
+    	daRns 		= zeros(Float64, (n+1) * n * 8n);
+        daRnsSize 	= n;
+        # precompute the necessary Rns
+        i = n
+     	while i>=4 
+            i = i ÷ 2  
+            j = 0
+     	    while j<n
+                j += i 
+     	    	precomputeRn(i, j, daRns[8n*(n*i+j)]);
+     		end
+     	end
+
+    end
     
-       	 multiply = fftc .* fftVec
+#=
     
-         result = irfft(multiply)
+    
+    function getColumnFromSq( input, output, whichColumn, n) 
+    
+    	for i in eachindex(output)
+    		output[i] = input[n*i + whichColumn];
+    	end
+    end
+    
+    function setColumnToSq( input, output, whichColumn, n)
+    	
+    	for i in eachindex(input)
+    		output[n*i+whichColumn] = input[i];
+    	end
     
     end
     
@@ -204,23 +224,26 @@ module FastHermiteTransform
     
     end
     
-    """
-     computes desired Rn
-     needed columns of circulant matrices listed vertically as top left, top right, bottom left, bottom right.
-    """
-    function precomputeRn( n, l, result) 
+=#
     
-        temp  = zeros(8*n);
-        temp2 = zeros(8*n);
+    """
+     performs a hermite transform in the most naive way possible directly from the
+     	data points given in xl()
+    """
+    function naiveTransform(data, results)
     
-        createAn(n,n/2+l,result);
-        for i=l+n÷2-1:-1;l
-             createAn(n,i,temp);
-             fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
-             result .= temp2
-        end
-        
-       
+    	results = zeros(BIGN)
+    
+    	for x=1:2*LITN # for each data point
+    	    Lminus1 = 0;
+    	    curVal = D0;
+    		for y in 1:BIGN # go through the n hermites
+    			results[y] += (data[x])*curVal;
+    			Lminus2 = Lminus1;
+    			Lminus1 = curVal;
+    			curVal  = (AL(y)*(xk(x)) + BL(y))*Lminus1 + CL(y)*Lminus2;
+    		end
+    	end
     end
     
     """
@@ -232,19 +255,19 @@ module FastHermiteTransform
     
        results = zeros(ComplexF64, BIGN)
        
-       for x in 0:2*LITN                    # for each data point
+       for x in 1:2*LITN                    # for each data point
            Lminus1 = xk(x)/BIGC;	        # x
-           Lminus2 = 2.0*pow(Lminus1,2)-1;  # 2*x^2-1
-           for y in 0:BIGN                  # go through the n chebyshevs
+           Lminus2 = 2.0 * Lminus1^2 - 1;  # 2*x^2-1
+           for y in 1:BIGN                  # go through the n chebyshevs
                curVal = (ALPHA*(xk(x)) +BETA)*Lminus1 + GAMMA*Lminus2;
-               results[y] += ((fftw_complex)data[x])*curVal;
+               results[y] += data[x] * curVal;
                Lminus2=Lminus1;
                Lminus1=curVal;
            end
        end
     
     end
-    
+
     """
     a recursive function which performs a Hermite transform in O(n(logn)^2) time
     Z0 and Z1 must be precomputed as defined in the paper.  l should be first
@@ -252,77 +275,63 @@ module FastHermiteTransform
     you must precompute all the necessary Rns.
     """
     function performTransform( Z0, Z1, n, l, result)
+
          result[l-1] = Z0[n-1];
          result[l]   = Z1[n-1];
     
-         if (n<3) return;
+         if (n<3) return 1 end
     
          #temp to store the new data
-         temp = zeros(Float64, 4*n);
+         temp = zeros(Float64, 4n);
     
          # combine Z0 and Z1 into Z to get ready for the matrix multiply
          
-         Z = zeros(Float64, 4*n);
+         Z = zeros(Float64, 4n);
          Z .= Z0
-    	 Z[n*2:end] .= Z1
+    	 Z[2n:end] .= Z1
 
          preFourBcirculantVcMatrixMultiply(n,l-1,Z,temp);
     
-    	 nover2 = n/2;
-         performTransform(Z0+nover2,Z1+nover2,nover2,l,result);
-         performTransform(temp+nover2,temp+5*nover2,nover2,l+nover2,result);
+    	 nover2 = n÷2;
 
-         return;
+         performTransform(Z0+nover2,Z1+nover2,nover2,l,result);
+
+         performTransform(temp+nover2,temp+5*nover2,nover2,l+nover2,result);
+         
+         return 1
+
     end
     
-    """
-    # performs a hermite transform in the most naive way possible directly from the
-    # 	data points given in xl()
-    """
-    function naiveTransform(data, results)
-    
-    	results = zeros(BIGN)
-    
-    	for x=0:2*LITN # for each data point
-    	    Lminus1 = 0;
-    	    curVal = D0;
-    		for y in 0:BIGN # go through the n hermites
-    			results[y] += (data[x])*curVal;
-    			Lminus2 = Lminus1;
-    			Lminus1 = curVal;
-    			curVal  = (AL(y)*(xk(x)) + BL(y))*Lminus1 + CL(y)*Lminus2;
-    		end
-    	end
-    end
     
     function oneDTransform(data, result)
     
     	n = BIGN;
     
-    	Z0    = zeros( ComplexF64, 2 * n)
-    	dblZ0 = zeros( ComplexF64, 2 * n)
-    	Z1    = zeros( ComplexF64, 2 * n)
-    	dblZ1 = zeros( ComplexF64, 2 * n)
+    	Z0    = zeros( ComplexF64, 2n)
+    	dblZ0 = zeros( ComplexF64, 2n)
+    	Z1    = zeros( ComplexF64, 2n)
+    	dblZ1 = zeros( ComplexF64, 2n)
     
-    	naiveChebyshev(data,Z0+n-1);
+    	naiveChebyshev(data,Z0[n:end]);
     	Z0[2*n-1]=0;
     
     	# we only want the real parts
     	for i=0:n
-    		dblZ0[n-1+i] = creal(Z0[n-1+i]);
+    		dblZ0[n+i] = real(Z0[n+i]);
     	end
     
     	# expand the data
-    	for i=0:n
-    		dblZ0[i]=dblZ0[2*n-i-2];
+    	for i=1:n
+    		dblZ0[i]=dblZ0[2n-i-2];
         end
     
     	# find the next data point
-    	calculateFirstZ(dblZ0,dblZ1,2*n);
+    	calculateFirstZ(dblZ0,dblZ1,2n);
     
     	# do the second part
     	performTransform(dblZ0,dblZ1,n,1,result);
     
     end
+
 
 end 
