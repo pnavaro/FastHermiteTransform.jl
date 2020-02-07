@@ -2,7 +2,7 @@ module FastHermiteTransform
 
     using FFTW
     
-    const BIGN = 128
+    const BIGN = 1
     const LITN = BIGN*5
     const BIGC = sqrt(2.0*BIGN+1)
     
