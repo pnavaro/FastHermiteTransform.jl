@@ -1,30 +1,32 @@
 using Test
-using FastHermiteTransform
+using ImportMacros
+import Base.Libc.rand
+
+@using FastHermiteTransform as FHT
 
 @test true
 
-int n = LITN;
-int N = BIGN;
-int i,j,x;
-tester = fopen("doc/testing.txt", "wt+");
+n = FHT.LITN
+N = FHT.BIGN
 
-data = zeros(n*2+1)
+RAND_MAX = 2^31-1
+
+data = zeros(Float64, 2n+1)
 
 fancyResult = zeros(N)
 naiveResult = zeros(N)
 
-daConstant = pow(-1,rand()%2)*rand()/RAND_MAX;
+daConstant = -1^(rand()%2)*rand()/RAND_MAX
 
-diag = zeros((2*n+1)*(2*n+1));
+diag = zeros(Float64, (2n+1,2n+1))
 
-for i in eachindex(diag)
-    diag[(2*n+1)*i+i] = exp(0-pow(xk(i),2)/2);
-    data[i] *= diag[(2*n+1)*i+i];
+for i in 1:2n+1
+    diag[i,i] = exp(-FHT.xk(i)^2/2)
+    data[i] *= diag[i,i]
 end
 
-initFastFouriers(N);
-initRns(N);
+FHT.initRns(N)
 
-oneDTransform(data,fancyResult);
+FHT.oneDTransform(data,fancyResult);
 
-naiveTransform(data,naiveResult);
+FHT.naiveTransform(data,naiveResult);
