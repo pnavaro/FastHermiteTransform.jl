@@ -15,7 +15,7 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 4
+#define BIGN 2
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
@@ -92,6 +92,7 @@ void precomputeRnAndStore(int n, int l, double* result) {
     fftw_free(temp2);
 
 }
+
 
 //perform a chebyshev transform in the most naive way possible directly from the
 //    data points defined by xl()
@@ -171,8 +172,8 @@ void oneDTransform(double *data, double* result) {
 
     fftw_complex *Z0 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
     double *dblZ0 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
-    fftw_complex *Z1 =     (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * 2 * n);
-    double *dblZ1      =     (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
+    fftw_complex *Z1 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * 2 * n);
+    double *dblZ1 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
 
  //do a chebyshev Transform
     naiveChebyshev(data,Z0+n-1);
@@ -236,8 +237,8 @@ int main(int argc, char *argv[])
     double *naiveResult = (double *) fftw_malloc(sizeof(double) * N);
 
     for(int j=0;      j<n/2;   ++j) data[j] = 0.0;
-    for(int j=n/2;    j<3*n/2; ++j) data[j] = 1.0;
-    for(int j=(3*n/2);j<2*n+1; ++j) data[j] = 0.0;
+    for(int j=n/2;    j<=3*n/2; ++j) data[j] = 1.0;
+    for(int j=(3*n/2+1);j<2*n+1; ++j) data[j] = 0.0;
 
     FILE *inputFile;
     inputFile = fopen("doc/data.txt", "wt+");
@@ -253,6 +254,12 @@ int main(int argc, char *argv[])
         diag[(2*n+1)*i+i] = exp(0-pow(xk(i),2)/2);
         data[i] *= diag[(2*n+1)*i+i];
     }
+
+    for(i=0;i<=2*n;++i){
+        printf("%.16lf\n",data[i]);
+    }
+
+    printf("Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
 
     initFastFouriers(N);
     initRns(N);
