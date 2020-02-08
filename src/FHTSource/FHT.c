@@ -15,14 +15,14 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 16
+#define BIGN 4
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
 #define ALPHA (2.0/BIGC)
 #define BETA 0
 #define GAMMA (-1.0)
-#define PI 3.14159265
+#define PI 3.141592654
 #define D0 (double)1.0/pow(PI,(double)1.0/4.0)
 
 //define al, bl, cl, ul, vl, and wl
@@ -76,19 +76,7 @@ void createAn(int n, int l, double *result) {
 //stores desired Rn in a file /Rns/xxxxx_xxxxx.dat if file does not already exist;
 //needed columns of circulant matrcies listed vertically as top left, top right, bottom left, bottom right.
 void precomputeRnAndStore(int n, int l, double* result) {
-    //check if it's there
-    char filename[210];
-    snprintf(filename,sizeof(filename),"Rns/%d_%d_%d.dat",BIGN,n,l);
-    FILE *inputFile;
-    inputFile = fopen(filename, "r");
     int i;
-    if(inputFile!=NULL) {
-//        printf("I already have it\n");
-        for(i=0; i<8*n; ++i)
-            fscanf(inputFile,"%Lf\n",&result[i]);
-        fclose(inputFile);
-        return;
-    }
 
     //now it's not so we open our write file and start computing
     double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
@@ -102,13 +90,7 @@ void precomputeRnAndStore(int n, int l, double* result) {
     }
     fftw_free(temp);
     fftw_free(temp2);
-    printf(filename);
 
-    //write it out
-    inputFile = fopen(filename, "wt+");
-    for(i=0;i<8*n;++i)
-        fprintf(inputFile,"%.20Lf\n",result[i]);
-    fclose(inputFile);
 }
 
 //perform a chebyshev transform in the most naive way possible directly from the
@@ -285,8 +267,7 @@ int main(int argc, char *argv[])
     for(i=0;i<N;++i){
         fancyResult[i]*=(2*BIGC)/n;
         naiveResult[i]*=(2*BIGC)/n;
-        printf("%.16lf\n",fancyResult[i]);
-        printf("%.16lf\n\n",naiveResult[i]);
+        printf("%.16lf\n",fabs(fancyResult[i]-naiveResult[i]));
     }
     printf("Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
 
