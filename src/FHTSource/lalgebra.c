@@ -51,6 +51,7 @@ void initRns(int n) {
     }
 }
 
+
 void destroyFastFouriers(int n) {
     int i;
     for(i=8; i<=2*n; i*=2) {
