@@ -1,6 +1,7 @@
 module FastHermiteTransform
 
     using FFTW
+    include("hermite.jl")
     
     const BIGN = 1
     const LITN = BIGN*5
