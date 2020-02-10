@@ -49,6 +49,9 @@ void initRns(int n) {
             precomputeRnAndStore(i, j, &daRns[8*n*(n*i+j)]);
         }
     }
+
+    for(int i=0; i<(n+1)*n*8*n; ++i) printf("%d %lf\n", daRns[i]);
+    exit(0);
 }
 
 
@@ -118,7 +121,7 @@ void circulantVcMatrixMultiply(double* c, double* VecCpy, int n, double* result)
      fftw_complex* fftVec = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
 
      //fast fourier c
-//     fftw_plan cplan = fftw_plan_dft_r2c_1d(n,c,fftc,FFTW_ESTIMATE);
+     //     fftw_plan cplan = fftw_plan_dft_r2c_1d(n,c,fftc,FFTW_ESTIMATE);
      fftw_execute_dft_r2c(daPlans[n],c,fftc);
 
      //fast fourier Vec

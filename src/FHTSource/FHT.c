@@ -15,7 +15,7 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 2
+#define BIGN 8
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
@@ -82,7 +82,13 @@ void precomputeRnAndStore(int n, int l, double* result) {
     double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
     double *temp2 = (double *) fftw_malloc(sizeof(double) * 8*n);
 
+    
     createAn(n,n/2+l,result);
+
+    for(i=0;i<=2*n;++i){
+        printf("%.16lf\n",result[i]);
+    }
+
     for(i=l+n/2-1; i>l; --i) {
          createAn(n,i,temp);
          fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
@@ -112,6 +118,8 @@ void naiveChebyshev(double *data, fftw_complex *results) {
             Lminus1=curVal;
         }
     }
+
+    for(int i; i<BIGN; ++i) printf("%lf+%lf\n", creal(results[i]), cimag(results[i]));
 }
 
 //a recursive function which performs a Hermite transform in O(n(logn)^2) time
@@ -175,10 +183,21 @@ void oneDTransform(double *data, double* result) {
     fftw_complex *Z1 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * 2 * n);
     double *dblZ1 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
 
- //do a chebyshev Transform
+    memset(Z0,    0, sizeof(fftw_complex) * (2*n));
+    memset(dblZ0, 0, sizeof(fftw_complex) * (2*n));
+    memset(Z1,    0, sizeof(fftw_complex) * (2*n));
+    memset(dblZ1, 0, sizeof(fftw_complex) * (2*n));
+
+    //do a chebyshev Transform
     naiveChebyshev(data,Z0+n-1);
+
+
     //printVector("cheby",Z0+n-1,n);
+    //exit(0);
     Z0[2*n-1]=0;
+
+    printf("\n Z0 \n");
+    for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(Z0[i]), cimag(Z0[i]));
 
     //we only want the real parts
     for(i=0; i<n; ++i) {
@@ -189,8 +208,13 @@ void oneDTransform(double *data, double* result) {
     for(i=0; i<n; ++i)
         dblZ0[i]=dblZ0[2*n-i-2];
 
+
     //find the next data point
     calculateFirstZ(dblZ0,dblZ1,2*n);
+
+    printf("\n dblZ1 \n");
+    for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(dblZ1[i]), cimag(dblZ1[i]));
+    exit(0);
 
     //do the second part
     performTransform(dblZ0,dblZ1,n,1,result);
@@ -255,22 +279,18 @@ int main(int argc, char *argv[])
         data[i] *= diag[(2*n+1)*i+i];
     }
 
-    for(i=0;i<=2*n;++i){
-        printf("%.16lf\n",data[i]);
-    }
-
-    printf("Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
 
     initFastFouriers(N);
     initRns(N);
     fclock=clock();
-    oneDTransform(data,fancyResult);
+    oneDTransform(data, fancyResult);
     fclock-=clock();
+
+    return 0;
 
     nclock=clock();
     naiveTransform(data,naiveResult);
     nclock-=clock();
-
     for(i=0;i<N;++i){
         fancyResult[i]*=(2*BIGC)/n;
         naiveResult[i]*=(2*BIGC)/n;

@@ -24,10 +24,6 @@ for i in 1:2n+1
     data[i] *= diag[i,i]
 end
 
-@show data
-
-rns = FHT.Rns(N)
-
-#FHT.oneDTransform(data,fancyResult);
+FHT.oneDTransform(data,fancyResult);
 #
 #FHT.naiveTransform(data,naiveResult);

@@ -1,46 +1,29 @@
 struct Rns
 
-    da      :: Vector{Float64}
-    da_size :: Int
+    data :: Vector{Float64}
+    size :: Int
 
     function Rns( n :: Int)
     
         da = zeros(Float64, (n+1) * n * 8n);
         da_size = n;
         # precompute the necessary Rns
+
         i = n
         while i>=4 
-            i = i ÷ 2  
             j = 0
             while j<n
-                j += i 
                 precompute(i, j, da[8n*(n*i+j)]);
+                j += i 
             end
+            i = i ÷ 2  
         end
+
 
         new( da, da_size)
 
     end
 
-end
-
-"""
- computes desired Rn
- needed columns of circulant matrices listed vertically as top left, top right, bottom left, bottom right.
-"""
-function precompute( n, l, result) 
-
-    temp  = zeros(8*n);
-    temp2 = zeros(8*n);
-
-    createAn(n,n÷2+l,result);
-    for i=l+n÷2-1:-1;l
-         createAn(n,i,temp);
-         fourBcirculantSqMatrixMultiply(result,temp,4n,temp2);
-         result .= temp2
-    end
-    
-   
 end
 
 """
@@ -61,6 +44,36 @@ function createAn(n, l, result)
     result[6n+1] = WL(l);
     result[8n-1] = UL(l);
 
+
+end
+
+"""
+ computes desired Rn
+ needed columns of circulant matrices listed vertically as top left, top right, bottom left, bottom right.
+"""
+function precompute( n, l, result) 
+
+    @show n, l
+    temp  = zeros(8*n);
+    temp2 = zeros(8*n);
+
+    createAn(n,n÷2+l,result);
+
+    println("***  createAn result *** ")
+    for i in eachindex(result) 
+        if (result[i] != 0) 
+            println(i, " ", round(result[i], digits=7)) 
+        end
+    end
+    throw("stop provoque par moi")
+
+    for i=l+n÷2-1:-1;l
+         createAn(n,i,temp);
+         fourBcirculantSqMatrixMultiply(result, temp, 4n, temp2);
+         result .= temp2
+    end
+    
+   
 end
 
 
@@ -68,10 +81,10 @@ end
 # give me the first column of a circulant matrix in M.
 function circulantVcMatrixMultiply( c, VecCpy, n, result)
 
-     fftc = fft(c)
-     fftVec = fft(VecCpy)
+     fftc = rfft(c)
+     fftVec = rfft(VecCpy)
      multiply = fftc .* fftVec
-     result = irfft(multiply)
+     result .= irfft(multiply, n)
 
 end
 
@@ -135,15 +148,15 @@ end
 
 
 # multiply Z by the Rn that was precomputed at n,l
-function preFourBcirculantVcMatrixMultiply( n, l, Vec, result)
+function preFourBcirculantVcMatrixMultiply( rns, n, l, Vec, result)
 
     n *= 4;
 
     # top left (want a column of the top left times first half of Vec)
-    circulantVcMatrixMultiply(daRns[daRnsSize*8*(daRnsSize*n/4+l)],Vec,n/2,result);
+    circulantVcMatrixMultiply(rns.data[rns.size*8*(rns.size*n/4+l)],Vec,n/2,result);
 
     # top right (want a column of the top right times second half of Vec)
-    circulantVcMatrixMultiply(daRns[daRnsSize*8*(daRnsSize*n/4+l)+n/2],Vec+n/2,n/2,temp);
+    circulantVcMatrixMultiply(rns.data[rns.size*8*(rns.size*n/4+l)+n/2],Vec+n/2,n/2,temp);
 
     # add top left and top right
     for x=0:n/2
@@ -151,10 +164,10 @@ function preFourBcirculantVcMatrixMultiply( n, l, Vec, result)
     end
 
     # bottom left (want a column of the bottom left times first half of Vec)
-    circulantVcMatrixMultiply(daRns[daRnsSize*8*(daRnsSize*n/4+l)+n],Vec,n/2,result+n/2);
+    circulantVcMatrixMultiply(rns.data[rns.size*8*(rns.size*n/4+l)+n],Vec,n/2,result+n/2);
 
     # bottom right (want a column of the bottom right times second half of Vec)
-    circulantVcMatrixMultiply(daRns[daRnsSize*8*(daRnsSize*n/4+l)+3*n/2],Vec+n/2,n/2,temp2);
+    circulantVcMatrixMultiply(rns.data[rns.size*8*(rns.size*n/4+l)+3*n/2],Vec+n/2,n/2,temp2);
 
     # add bottom left and bottom right
     for x=n/2:n
