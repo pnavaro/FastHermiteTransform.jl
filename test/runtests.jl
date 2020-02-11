@@ -24,6 +24,13 @@ for i in 1:2n+1
     data[i] *= diag[i,i]
 end
 
-FHT.oneDTransform(data,fancyResult);
+
+sht = FHT.naive_transform(data);
+
+@show sht
+
+
+
+
+#FHT.oneDTransform(data,fancyResult);
 #
-#FHT.naiveTransform(data,naiveResult);

@@ -11,4 +11,3 @@ The inverse Hermite transform is given by
 ```math
 H^{-1}\{f_H(n)\} = F(x) = \sum_{n=0}^\infty \frac{1}{\sqrt\pi 2^n n!} f_H(n) H_n(x)
 ```
-

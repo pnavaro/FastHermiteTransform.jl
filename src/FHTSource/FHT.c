@@ -64,13 +64,13 @@ void createAn(int n, int l, double *result) {
     //top left is all zeros (we'll zero out everything else while we're at it.
     memset(result,0,sizeof(double)*8*n);
     //top right is I2n
-    result[2*n]=1;
+    result[2*n]   = 1;
     //bottom left is cl*I2n
-    result[4*n]=CL(l);
+    result[4*n]   = CL(l);
     //bottom right is Cn(wl,vl,ul);
-    result[6*n]   =VL(l);
-    result[6*n+1] =WL(l);
-    result[8*n-1] =UL(l);
+    result[6*n]   = VL(l);
+    result[6*n+1] = WL(l);
+    result[8*n-1] = UL(l);
 }
 
 //stores desired Rn in a file /Rns/xxxxx_xxxxx.dat if file does not already exist;
@@ -82,18 +82,20 @@ void precomputeRnAndStore(int n, int l, double* result) {
     double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
     double *temp2 = (double *) fftw_malloc(sizeof(double) * 8*n);
 
-    
+    printf(" l = %d \n ", l);
+
     createAn(n,n/2+l,result);
 
-    for(i=0;i<=2*n;++i){
-        printf("%.16lf\n",result[i]);
-    }
 
     for(i=l+n/2-1; i>l; --i) {
          createAn(n,i,temp);
          fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
          memcpy(result,temp2,sizeof(double)*8*n);
     }
+    for(i=0;i<=8*n;++i){
+        if (result[i] != 0.0) printf("%d %.16lf\n",i+1, result[i]);
+    }
+    exit(0);
     fftw_free(temp);
     fftw_free(temp2);
 

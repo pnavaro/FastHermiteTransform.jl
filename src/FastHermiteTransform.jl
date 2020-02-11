@@ -16,7 +16,7 @@ module FastHermiteTransform
     AL(l) = sqrt(2.0/(l+1.0))
     BL(l) = 0.0
     CL(l) = (-1.0)*sqrt(l/(l+1.0))
-    
+
     UL(l) = AL(l)/ALPHA
     VL(l) = BL(l)+(-1)*(UL(l)*BETA)
     WL(l) = (-1)*GAMMA*UL(l)
@@ -56,20 +56,23 @@ module FastHermiteTransform
      performs a hermite transform in the most naive way possible directly from the
          data points given in xl()
     """
-    function naiveTransform(data, results)
+    function naive_transform(data)
     
-        results = zeros(BIGN)
+        results = zeros(Float64, BIGN)
     
-        for x=1:2*LITN # for each data point
+        for x in eachindex(data)
             Lminus1 = 0;
             curVal = D0;
-            for y in 1:BIGN # go through the n hermites
+            for y in eachindex(results)
                 results[y] += (data[x])*curVal;
                 Lminus2 = Lminus1;
                 Lminus1 = curVal;
-                curVal  = (AL(y)*(xk(x)) + BL(y))*Lminus1 + CL(y)*Lminus2;
+                curVal  = (AL(y-1)*(xk(x-1)) + BL(y-1))*Lminus1 + CL(y-1)*Lminus2;
             end
         end
+
+        return results
+
     end
     
     """

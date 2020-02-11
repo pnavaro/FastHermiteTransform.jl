@@ -32,7 +32,7 @@ void initFastFouriers(int n) {
     int i;
     for(i=8; i<=2*n; i*=2) {
         double* in = (double*) fftw_malloc(sizeof(double) * i);
-        fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * i);
+        fftw_complex* out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * (i/2+1));
         daPlans[i] = fftw_plan_dft_r2c_1d(i,in,out,FFTW_ESTIMATE);
         fftw_free(in);
         fftw_free(out);
