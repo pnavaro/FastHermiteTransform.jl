@@ -28,3 +28,4 @@ src/FHTSource/data.txt
 *.exe
 *.o
 *.dat
+notebooks/.ipynb_checkpoints/naive_transform-checkpoint.jl

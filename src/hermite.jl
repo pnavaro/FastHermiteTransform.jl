@@ -43,11 +43,45 @@ function isht( ht, x )
     
         h_n = Hermite(n) 
     
-        result += 1 / sqrt(π * 2^n * factorial(n)) * ht(n) * h_n(x)
+        result += 1 / sqrt(π * 2^n * factorial(n)) * ht[n] * h_n(x)
     
     end 
 
     return result
 
+
+end
+
+"""
+    sht( data )
+
+ performs a slow hermite transform in the most naive way possible directly from the
+     data points given in xl()
+"""
+function sht(data, n)
+
+    results = zeros(Float64, n)
+
+    al(l) = sqrt(2.0/(l+1.0))
+    bl(l) = 0.0
+    cl(l) = (-1.0)*sqrt(l/(l+1.0))
+
+    litn = length(data)
+    bigc = sqrt(2n+1)
+    xk(k) = ((k-litn)/litn)*bigc
+    d0 = 1.0/pi^(1/4)
+
+    for x in eachindex(data)
+        lminus1 = 0
+        cur_val = d0
+        for y in eachindex(results)
+            results[y] += data[x] * cur_val
+            lminus2 = lminus1
+            lminus1 = cur_val
+            cur_val = (al(y-1)*(xk(x-1)) + bl(y-1))*lminus1 + cl(y-1)*lminus2;
+        end
+    end
+
+    return results
 
 end
