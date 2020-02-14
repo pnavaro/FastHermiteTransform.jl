@@ -2,14 +2,13 @@ using Documenter
 using FastHermiteTransform
 
 makedocs(
-    sitename = "FastHermiteTransform",
+    sitename = "FastHermiteTransform.jl",
     format = Documenter.HTML(),
-    modules = [FastHermiteTransform]
+    modules = [FastHermiteTransform],
+    pages = ["Documentation"    => "index.md"]
 )
 
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
-#=deploydocs(
-    repo = "<repository url>"
-)=#
+deploydocs(
+    deps   = Deps.pip("mkdocs", "python-markdown-math"),
+    repo   = "github.com/pnavaro/FastHermiteTransform.jl.git",
+)
