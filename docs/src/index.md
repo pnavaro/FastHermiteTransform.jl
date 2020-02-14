@@ -4,7 +4,7 @@ The Hermite transform expresses a function ``f(x)`` in the complete orthonormal
 basis of Hermite functions ``\{\psi_n(x)\}^\infty_{n=0}=0`` where
 
 ```math
-\psi(x)=(h_n)^{\tfrac{1}{2}} − e^{-x^2/2} H_n(x)
+\psi_n(x)=(h_n)^{\tfrac{1}{2}} − \euler^{-x^2/2} H_n(x)
 ```
 
 and ``h_n = 2^n n! \sqrt{\pi}`` provided ``H_n(x)`` is the nth Hermite polynomial. 
