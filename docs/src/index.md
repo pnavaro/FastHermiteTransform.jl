@@ -8,6 +8,7 @@ basis of Hermite functions ``\{\psi_n(x)\}^\infty_{n=0}=0`` where
 ```
 
 and ``h_n = 2^n n! \sqrt{\pi}`` provided ``H_n(x)`` is the nth Hermite polynomial. 
+
 The Hermite polynomials are determined by the three-term recurrence relation
 
 ```math
