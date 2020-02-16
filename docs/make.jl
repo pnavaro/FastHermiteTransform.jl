@@ -1,3 +1,5 @@
+push!(LOAD_PATH,"../src/")
+
 using Documenter
 using FastHermiteTransform
 
@@ -5,7 +7,7 @@ makedocs(
     sitename = "FastHermiteTransform.jl",
     format = Documenter.HTML(),
     modules = [FastHermiteTransform],
-    pages = ["Documentation"    => "index.md"]
+    pages = ["Documentation"=> "index.md"]
 )
 
 deploydocs(
