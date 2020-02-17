@@ -50,8 +50,8 @@ void initRns(int n) {
         }
     }
 
-    for(int i=0; i<(n+1)*n*8*n; ++i) printf("%d %lf\n", daRns[i]);
-    exit(0);
+    //for(int i=0; i<(n+1)*n*8*n; ++i) printf("%d %lf\n", daRns[i]);
+    //exit(0);
 }
 
 

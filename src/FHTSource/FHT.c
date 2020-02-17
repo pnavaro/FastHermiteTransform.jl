@@ -82,7 +82,7 @@ void precomputeRnAndStore(int n, int l, double* result) {
     double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
     double *temp2 = (double *) fftw_malloc(sizeof(double) * 8*n);
 
-    printf(" l = %d \n ", l);
+    //printf(" l = %d \n ", l);
 
     createAn(n,n/2+l,result);
 
@@ -92,10 +92,9 @@ void precomputeRnAndStore(int n, int l, double* result) {
          fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
          memcpy(result,temp2,sizeof(double)*8*n);
     }
-    for(i=0;i<=8*n;++i){
-        if (result[i] != 0.0) printf("%d %.16lf\n",i+1, result[i]);
-    }
-    exit(0);
+    //for(i=0;i<=8*n;++i){
+        //if (result[i] != 0.0) printf("%d %.16lf\n",i+1, result[i]);
+    //}
     fftw_free(temp);
     fftw_free(temp2);
 
@@ -198,8 +197,8 @@ void oneDTransform(double *data, double* result) {
     //exit(0);
     Z0[2*n-1]=0;
 
-    printf("\n Z0 \n");
-    for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(Z0[i]), cimag(Z0[i]));
+    //printf("\n Z0 \n");
+    //for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(Z0[i]), cimag(Z0[i]));
 
     //we only want the real parts
     for(i=0; i<n; ++i) {
@@ -214,9 +213,9 @@ void oneDTransform(double *data, double* result) {
     //find the next data point
     calculateFirstZ(dblZ0,dblZ1,2*n);
 
-    printf("\n dblZ1 \n");
-    for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(dblZ1[i]), cimag(dblZ1[i]));
-    exit(0);
+    // printf("\n dblZ1 \n");
+    // for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(dblZ1[i]), cimag(dblZ1[i]));
+    // exit(0);
 
     //do the second part
     performTransform(dblZ0,dblZ1,n,1,result);
@@ -281,14 +280,11 @@ int main(int argc, char *argv[])
         data[i] *= diag[(2*n+1)*i+i];
     }
 
-
     initFastFouriers(N);
     initRns(N);
     fclock=clock();
     oneDTransform(data, fancyResult);
     fclock-=clock();
-
-    return 0;
 
     nclock=clock();
     naiveTransform(data,naiveResult);
@@ -296,7 +292,8 @@ int main(int argc, char *argv[])
     for(i=0;i<N;++i){
         fancyResult[i]*=(2*BIGC)/n;
         naiveResult[i]*=(2*BIGC)/n;
-        printf("%.16lf\n",fabs(fancyResult[i]-naiveResult[i]));
+        //printf("%16.3lf\n",fabs(fancyResult[i]-naiveResult[i]));
+        printf("%16.7lf\n",naiveResult[i]);
     }
     printf("Fancy took %i \nNaive took %i \n to a degree of %ld per second\n\n\n",-fclock,-nclock, CLOCKS_PER_SEC);
 

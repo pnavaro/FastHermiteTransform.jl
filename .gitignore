@@ -29,3 +29,4 @@ src/FHTSource/data.txt
 *.o
 *.dat
 notebooks/.ipynb_checkpoints/naive_transform-checkpoint.jl
+notebooks/.ipynb_checkpoints/euler_inverse_transform-checkpoint.ipynb
