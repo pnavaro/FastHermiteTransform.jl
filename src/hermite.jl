@@ -1,26 +1,47 @@
 using Polynomials
 
-function coefs( n::Int )
+"""
+    hermite_coeff( n )
 
-    if n == 0 return [0.0] end
-    if n == 1 return [1.0] end
+For the physicists polynomials, assuming
+```math
+H_n(x) = \\sum^n_{k=0} a_{n,k} x^k,
+```
+we have:
+```math
+H_{n+1}(x) = 2x H_n(x) - 2n H_{n-1}(x).
+```
+
+Individual coefficients are related by the following recursion formula:
+
+```math 
+a_{n+1,k} = \\begin{cases}
+ - a_{n,k+1} & k = 0, \\\\ 
+ 2 a_{n,k-1} - (k+1)a_{n,k+1} & k > 0,
+\\end{cases}
+```
+
+and ``a_{0,0} = 1, a_{1,0} = 0, a_{1,1} = 2``.
+"""
+function hermite_coefs( n )
     
-    m = zeros(Float64, (n, n))
-    m[1, 1] = 1.0
-    m[2, 2] = 1.0
-      
-    for l in 3:n
-        m[1, l] = - (l - 2) * m[1, l-2]
-        for i in 2:n
-            m[i, l] = m[i-1, l-1] - (l - 2) * m[i, l-2]
+    a = zeros(Float64, n+1, n+2)
+    a[1, 1] = 1.0
+    if n == 0 return [1.0] end
+    a[2, 2] = 2.0
+
+    for i in 2:n
+        a[i+1, 1] = - a[i, 2]
+        for k in 2:n+1
+            a[i+1, k] = 2 * a[i, k-1] - k * a[i,k+1]
         end
     end
-
-    m[:,n]
-
+    
+    a[n+1, :]
+    
 end
 
-Hermite(n::Int) = Poly(coefs(n))
+Hermite(n::Int) = Poly(hermite_coefs(n))
 
 """
     isht( ht, x)
@@ -48,7 +69,6 @@ function isht( ht, x )
     end 
 
     return result
-
 
 end
 
