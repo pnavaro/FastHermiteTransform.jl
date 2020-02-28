@@ -15,7 +15,7 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 8
+#define BIGN 2
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
@@ -120,7 +120,7 @@ void naiveChebyshev(double *data, fftw_complex *results) {
         }
     }
 
-    for(int i; i<BIGN; ++i) printf("%lf+%lf\n", creal(results[i]), cimag(results[i]));
+    //for(int i; i<BIGN; ++i) printf("%lf+%lf\n", creal(results[i]), cimag(results[i]));
 }
 
 //a recursive function which performs a Hermite transform in O(n(logn)^2) time
@@ -261,9 +261,11 @@ int main(int argc, char *argv[])
     double *fancyResult = (double *) fftw_malloc(sizeof(double) * N);
     double *naiveResult = (double *) fftw_malloc(sizeof(double) * N);
 
-    for(int j=0;      j<n/2;   ++j) data[j] = 0.0;
-    for(int j=n/2;    j<=3*n/2; ++j) data[j] = 1.0;
-    for(int j=(3*n/2+1);j<2*n+1; ++j) data[j] = 0.0;
+    // for(int j=0;      j<n/2;   ++j) data[j] = 0.0;
+    // for(int j=n/2;    j<=3*n/2; ++j) data[j] = 1.0;
+    // for(int j=(3*n/2+1);j<2*n+1; ++j) data[j] = 0.0;
+
+    for(int j=0;j<2*n+1; ++j) data[j] = 1.0;
 
     FILE *inputFile;
     inputFile = fopen("doc/data.txt", "wt+");
