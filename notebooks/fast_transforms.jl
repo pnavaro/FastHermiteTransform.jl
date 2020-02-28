@@ -60,3 +60,26 @@ f̂ = iweightedhermitetransform([0.0; 0; 0; 0; 1.0; zeros(95)])
 plot( [ x x], [f f̂])
 
 
+
+# +
+import FastTransforms: ForwardWeightedHermitePlan
+import FastTransforms: BackwardWeightedHermitePlan
+
+n = 100
+fht = ForwardWeightedHermitePlan(n)
+iht = BackwardWeightedHermitePlan(n)
+
+# +
+using BenchmarkTools
+f = rand(n)
+
+@btime iht * ( fht * f );
+
+# +
+import FastTransforms: weightedhermitetransform
+import FastTransforms: iweightedhermitetransform
+
+@btime iweightedhermitetransform( weightedhermitetransform(f) );
+# -
+
+
