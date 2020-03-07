@@ -15,7 +15,7 @@
 #include <lalgebra.h>
 #include <string.h>
 
-#define BIGN 2
+#define BIGN 8
 #define LITN (BIGN*5)
 #define BIGC sqrt((double)2*BIGN+1)
 
