@@ -61,28 +61,52 @@ void initFastFouriers(int n) {
     }
 }
 
-void initRns(int n) {
-    int i,j;
-    daRns         = (double*) fftw_malloc(sizeof(double) * (n+1) * n * 8*n);
-    daRnsSize     = n;
-    //precompute the necessary Rns
-    for(i=n; i>=4;i/=2) {
-        for(j=0; j<n; j+=i) {
-            precomputeRnAndStore(i, j, &daRns[8*n*(n*i+j)]);
-        }
-    }
-
-    //for(int i=0; i<(n+1)*n*8*n; ++i) printf("%d %lf\n", daRns[i]);
-    //exit(0);
+//define An(l) as defined in the paper
+//result is a 8*n sized vector with each 2n representing a circulant block
+void createAn(int n, int l, double *result) {
+    //top left is all zeros (we'll zero out everything else while we're at it.
+    memset(result,0,sizeof(double)*8*n);
+    //top right is I2n
+    result[2*n]   = 1;
+    //bottom left is cl*I2n
+    result[4*n]   = CL(l);
+    //bottom right is Cn(wl,vl,ul);
+    result[6*n]   = VL(l);
+    result[6*n+1] = WL(l);
+    result[8*n-1] = UL(l);
 }
 
+//give me the first column of a circulant matrix in M.
+void circulantVcMatrixMultiply(double* c, double* VecCpy, int n, double* result) {
+     int i;
+     fftw_complex* fftc = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
+     fftw_complex* fftVec = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
 
-void destroyFastFouriers(int n) {
-    int i;
-    for(i=8; i<=2*n; i*=2) {
-        fftw_destroy_plan(daPlans[i]);
-    }
-    fftw_free(daPlans);
+     //fast fourier c
+     //     fftw_plan cplan = fftw_plan_dft_r2c_1d(n,c,fftc,FFTW_ESTIMATE);
+     fftw_execute_dft_r2c(daPlans[n],c,fftc);
+
+     //fast fourier Vec
+     fftw_execute_dft_r2c(daPlans[n],VecCpy,fftVec);
+
+     fftw_complex* multiply = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
+     for(i=0; i<n; ++i) {
+         multiply[i] = fftc[i]*fftVec[i];
+     }
+
+     fftw_plan Finalplan  = fftw_plan_dft_c2r_1d(n,multiply,result,FFTW_ESTIMATE);
+     fftw_execute(Finalplan);
+
+     for(i=0; i<n; ++i) {
+              result[i]/=n;
+     }
+
+     fftw_destroy_plan(Finalplan);
+     fftw_free(fftVec);
+     fftw_free(multiply);
+     fftw_free(fftc);
+
+     return;
 }
 
 // A B  *  E F  = AE+BG AF+BH
@@ -136,42 +160,56 @@ void fourBcirculantSqMatrixMultiply(double* M1, double* M2, int n, double* resul
     fftw_free(temp2);
 }
 
-//give me the first column of a circulant matrix in M.
-void circulantVcMatrixMultiply(double* c, double* VecCpy, int n, double* result) {
-     int i;
-     fftw_complex* fftc = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
-     fftw_complex* fftVec = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
 
-     //fast fourier c
-     //     fftw_plan cplan = fftw_plan_dft_r2c_1d(n,c,fftc,FFTW_ESTIMATE);
-     fftw_execute_dft_r2c(daPlans[n],c,fftc);
+//stores desired Rn in a file /Rns/xxxxx_xxxxx.dat if file does not already exist;
+//needed columns of circulant matrcies listed vertically as top left, top right, bottom left, bottom right.
+void precomputeRnAndStore(int n, int l, double* result) {
+    int i;
 
-     //fast fourier Vec
-//     fftw_plan Vecplan  = fftw_plan_dft_r2c_1d(n,VecCpy,fftVec,FFTW_ESTIMATE);
-//     fftw_execute(Vecplan);
-     fftw_execute_dft_r2c(daPlans[n],VecCpy,fftVec);
+    //now it's not so we open our write file and start computing
+    double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
+    double *temp2 = (double *) fftw_malloc(sizeof(double) * 8*n);
 
-     fftw_complex* multiply = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * n);
-     for(i=0; i<n; ++i) {
-         multiply[i] = fftc[i]*fftVec[i];
-     }
+    //printf(" l = %d \n ", l);
 
-     fftw_plan Finalplan  = fftw_plan_dft_c2r_1d(n,multiply,result,FFTW_ESTIMATE);
-     fftw_execute(Finalplan);
+    createAn(n,n/2+l,result);
 
-     for(i=0; i<n; ++i) {
-              result[i]/=n;
-     }
 
-     fftw_destroy_plan(Finalplan);
-//     fftw_destroy_plan(cplan);
-//     fftw_destroy_plan(Vecplan);
-     fftw_free(fftVec);
-     fftw_free(multiply);
-     fftw_free(fftc);
+    for(i=l+n/2-1; i>l; --i) {
+         createAn(n,i,temp);
+         fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
+         memcpy(result,temp2,sizeof(double)*8*n);
+    }
+    fftw_free(temp);
+    fftw_free(temp2);
 
-     return;
 }
+
+
+
+void initRns(int n) {
+    int i,j;
+    daRns         = (double*) fftw_malloc(sizeof(double) * (n+1) * n * 8*n);
+    daRnsSize     = n;
+    //precompute the necessary Rns
+    for(i=n; i>=4;i/=2) {
+        for(j=0; j<n; j+=i) {
+            precomputeRnAndStore(i, j, &daRns[8*n*(n*i+j)]);
+        }
+    }
+
+}
+
+
+void destroyFastFouriers(int n) {
+    int i;
+    for(i=8; i<=2*n; i*=2) {
+        fftw_destroy_plan(daPlans[i]);
+    }
+    fftw_free(daPlans);
+}
+
+
 
 //multiply Z by the Rn that was precomputed at n,l
 void preFourBcirculantVcMatrixMultiply(int n, int l, double* Vec, double* result) {
@@ -184,7 +222,7 @@ void preFourBcirculantVcMatrixMultiply(int n, int l, double* Vec, double* result
     circulantVcMatrixMultiply(&daRns[daRnsSize*8*(daRnsSize*n/4+l)],Vec,n/2,result);
 
     //top right (want a column of the top right times second half of Vec)
-   circulantVcMatrixMultiply(&daRns[daRnsSize*8*(daRnsSize*n/4+l)+n/2],Vec+n/2,n/2,temp);
+    circulantVcMatrixMultiply(&daRns[daRnsSize*8*(daRnsSize*n/4+l)+n/2],Vec+n/2,n/2,temp);
 
     //add top left and top right
     for(x=0; x<n/2; ++x)
@@ -220,71 +258,7 @@ void calculateFirstZ(double *Z0, double *Z1,int n)
     }
 }
 
-//define An(l) as defined in the paper
-//result is a 8*n sized vector with each 2n representing a circulant block
-void createAn(int n, int l, double *result) {
-    int i;
-    //top left is all zeros (we'll zero out everything else while we're at it.
-    memset(result,0,sizeof(double)*8*n);
-    //top right is I2n
-    result[2*n]   = 1;
-    //bottom left is cl*I2n
-    result[4*n]   = CL(l);
-    //bottom right is Cn(wl,vl,ul);
-    result[6*n]   = VL(l);
-    result[6*n+1] = WL(l);
-    result[8*n-1] = UL(l);
-}
 
-//stores desired Rn in a file /Rns/xxxxx_xxxxx.dat if file does not already exist;
-//needed columns of circulant matrcies listed vertically as top left, top right, bottom left, bottom right.
-void precomputeRnAndStore(int n, int l, double* result) {
-    int i;
-
-    //now it's not so we open our write file and start computing
-    double *temp = (double *) fftw_malloc(sizeof(double) * 8*n);
-    double *temp2 = (double *) fftw_malloc(sizeof(double) * 8*n);
-
-    //printf(" l = %d \n ", l);
-
-    createAn(n,n/2+l,result);
-
-
-    for(i=l+n/2-1; i>l; --i) {
-         createAn(n,i,temp);
-         fourBcirculantSqMatrixMultiply(result,temp,4*n,temp2);
-         memcpy(result,temp2,sizeof(double)*8*n);
-    }
-    //for(i=0;i<=8*n;++i){
-        //if (result[i] != 0.0) printf("%d %.16lf\n",i+1, result[i]);
-    //}
-    fftw_free(temp);
-    fftw_free(temp2);
-
-}
-
-
-//perform a chebyshev transform in the most naive way possible directly from the
-//    data points defined by xl()
-void naiveChebyshev(double *data, fftw_complex *results) {
-    memset(results,0,sizeof(fftw_complex)*BIGN);
-    fftw_complex Lminus1;
-    fftw_complex Lminus2;
-    fftw_complex curVal;
-    int x,y;
-    for(x=0; x<=2*LITN; ++x) {//for each data point
-        Lminus1 = (double)xk(x)/BIGC;    //x
-        Lminus2 = 2.0*pow(Lminus1,2)-1;  //2*x^2-1
-        for(y=0; y<BIGN; ++y) {//go through the n chebyshevs
-            curVal = (ALPHA*(xk(x)) +BETA)*Lminus1 + GAMMA*Lminus2;
-            results[y] += ((fftw_complex)data[x])*curVal;
-            Lminus2=Lminus1;
-            Lminus1=curVal;
-        }
-    }
-
-    //for(int i; i<BIGN; ++i) printf("%lf+%lf\n", creal(results[i]), cimag(results[i]));
-}
 
 //a recursive function which performs a Hermite transform in O(n(logn)^2) time
 //Z0 and Z1 must be precomputed as defined in the paper.  l should be first
@@ -315,82 +289,78 @@ void performTransform(double* Z0, double* Z1, int n, int l, double* result) {
      return;
 }
 
-void oneDTransform(double *data, double* result) {
-    int i, j;
-    int n=BIGN;
-
-    fftw_complex *Z0 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
-    double *dblZ0 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
-    fftw_complex *Z1 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * 2 * n);
-    double *dblZ1 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * n));
-
-    memset(Z0,    0, sizeof(fftw_complex) * (2*n));
-    memset(dblZ0, 0, sizeof(fftw_complex) * (2*n));
-    memset(Z1,    0, sizeof(fftw_complex) * (2*n));
-    memset(dblZ1, 0, sizeof(fftw_complex) * (2*n));
-
-    //do a chebyshev Transform
-    naiveChebyshev(data,Z0+n-1);
-
-
-    //printVector("cheby",Z0+n-1,n);
-    //exit(0);
-    Z0[2*n-1]=0;
-
-    //printf("\n Z0 \n");
-    //for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(Z0[i]), cimag(Z0[i]));
-
-    //we only want the real parts
-    for(i=0; i<n; ++i) {
-        dblZ0[n-1+i] = creal(Z0[n-1+i]);
-    }
-
-    //expand the data
-    for(i=0; i<n; ++i)
-        dblZ0[i]=dblZ0[2*n-i-2];
-
-
-    //find the next data point
-    calculateFirstZ(dblZ0,dblZ1,2*n);
-
-    // printf("\n dblZ1 \n");
-    // for(int i; i < 2*n; ++i) printf("%d %lf+%lf \n", i+1, creal(dblZ1[i]), cimag(dblZ1[i]));
-    // exit(0);
-
-    //do the second part
-    performTransform(dblZ0,dblZ1,n,1,result);
-
-    fftw_free(Z0);
-    fftw_free(dblZ0);
-    fftw_free(Z1);
-    fftw_free(dblZ1);
-}
 
 int main(int argc, char *argv[])
 {
     int n = LITN;
     int N = BIGN;
-    int i,j,x;
 
     double *data   = (double *) fftw_malloc(sizeof(double) * (n*2+1));
 
-    double *fancyResult = (double *) fftw_malloc(sizeof(double) * N);
-    double *naiveResult = (double *) fftw_malloc(sizeof(double) * N);
-
-    // for(int j=0;      j<n/2;   ++j) data[j] = 0.0;
-    // for(int j=n/2;    j<=3*n/2; ++j) data[j] = 1.0;
-    // for(int j=(3*n/2+1);j<2*n+1; ++j) data[j] = 0.0;
+    double *result = (double *) fftw_malloc(sizeof(double) * N);
 
     for(int i=0;i<2*n+1; ++i) data[i] = exp(0-pow(xk(i),2)/2);
 
 
     initFastFouriers(N);
     initRns(N);
-    oneDTransform(data, fancyResult);
 
-    for(i=0;i<N;++i){
-        fancyResult[i]*=(2*BIGC)/n;
-        printf("%16.7lf\n",fancyResult[i]);
+    fftw_complex *Z0 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * (2 * N));
+    double *dblZ0 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * N));
+    fftw_complex *Z1 = (fftw_complex *) fftw_malloc(sizeof(fftw_complex) * 2 * N);
+    double *dblZ1 = (double *) fftw_malloc(sizeof(fftw_complex) * (2 * N));
+
+    memset(Z0,    0, sizeof(fftw_complex) * (2*N));
+    memset(dblZ0, 0, sizeof(fftw_complex) * (2*N));
+    memset(Z1,    0, sizeof(fftw_complex) * (2*N));
+    memset(dblZ1, 0, sizeof(fftw_complex) * (2*N));
+
+    //perform a chebyshev transform in the most naive way possible directly from the
+    //    data points defined by xl()
+
+    fftw_complex Lminus1;
+    fftw_complex Lminus2;
+    fftw_complex curVal;
+    for(int x=0; x<=2*LITN; ++x) {//for each data point
+        Lminus1 = (double)xk(x)/BIGC;    //x
+        Lminus2 = 2.0*pow(Lminus1,2)-1;  //2*x^2-1
+        for(int y=0; y<BIGN; ++y) {//go through the n chebyshevs
+            curVal = (ALPHA*(xk(x)) +BETA)*Lminus1 + GAMMA*Lminus2;
+            Z0[y+N-1] += ((fftw_complex)data[x])*curVal;
+            Lminus2=Lminus1;
+            Lminus1=curVal;
+        }
+    }
+
+    // end chebyshev
+
+
+    Z0[2*N-1]=0;
+
+    //we only want the real parts
+    for(int i=0; i<N; ++i) {
+        dblZ0[N-1+i] = creal(Z0[N-1+i]);
+    }
+
+    //expand the data
+    for(int i=0; i<N; ++i)
+        dblZ0[i]=dblZ0[2*N-i-2];
+
+
+    //find the next data point
+    calculateFirstZ(dblZ0,dblZ1,2*N);
+
+    //do the second part
+    performTransform(dblZ0,dblZ1,N,1,result);
+
+    fftw_free(Z0);
+    fftw_free(dblZ0);
+    fftw_free(Z1);
+    fftw_free(dblZ1);
+
+    for(int i=0;i<N;++i){
+        result[i]*=(2*BIGC)/n;
+        printf("%16.7lf\n", result[i]);
     }
 
     return 0;
