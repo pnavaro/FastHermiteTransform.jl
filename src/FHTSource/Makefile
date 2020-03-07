@@ -6,7 +6,7 @@ FFTW_LIBDIR = /usr/local/lib
 
 LIBS =  -L${FFTW_LIBDIR} -lfftw3
 INCS =  -I. -I${FFTW_INCDIR}
-CFLAGS = -O3 ${INCS} -Wno-implicit-function-declaration
+CFLAGS = -O3 ${INCS} -Wno-implicit-function-declaration -Wall
 
 all: ${BIN} fancy
 
