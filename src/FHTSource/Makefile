@@ -8,10 +8,13 @@ LIBS =  -L${FFTW_LIBDIR} -lfftw3
 INCS =  -I. -I${FFTW_INCDIR}
 CFLAGS = -O3 ${INCS} -Wno-implicit-function-declaration
 
-all: ${BIN}
+all: ${BIN} fancy
 
 $(BIN): $(OBJ)
-	$(CC) $(CCFLAGS) $^ -o $@ $(LIBS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
+
+fancy: fancy.c
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS)
 
 clean:
 	rm -f ${BIN} ${OBJ}
