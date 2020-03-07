@@ -50,20 +50,6 @@ ComplexF64 xk(int k) {
 
 
 
-//define An(l) as defined in the paper
-//result is a 8*n sized vector with each 2n representing a circulant block
-void createAn(int n, int l, double *result) {
-    //top left is all zeros (we'll zero out everything else while we're at it.
-    memset(result,0,Float64*8*n);
-    //top right is I2n
-    result[2*n]   = 1;
-    //bottom left is cl*I2n
-    result[4*n]   = CL(l);
-    //bottom right is Cn(wl,vl,ul);
-    result[6*n]   = VL(l);
-    result[6*n+1] = WL(l);
-    result[8*n-1] = UL(l);
-}
 
 //give me the first column of a circulant matrix in M.
 void circulantVcMatrixMultiply(double* c, double* VecCpy, int n, double* result) {
@@ -149,6 +135,21 @@ void fourBcirculantSqMatrixMultiply(double* M1, double* M2, int n, double* resul
     fftw_free(temp2);
 }
 
+
+//define An(l) as defined in the paper
+//result is a 8*n sized vector with each 2n representing a circulant block
+void createAn(int n, int l, double *result) {
+    //top left is all zeros (we'll zero out everything else while we're at it.
+    memset(result,0,Float64*8*n);
+    //top right is I2n
+    result[2*n]   = 1;
+    //bottom left is cl*I2n
+    result[4*n]   = CL(l);
+    //bottom right is Cn(wl,vl,ul);
+    result[6*n]   = VL(l);
+    result[6*n+1] = WL(l);
+    result[8*n-1] = UL(l);
+}
 
 //stores desired Rn in a file /Rns/xxxxx_xxxxx.dat if file does not already exist;
 //needed columns of circulant matrcies listed vertically as top left, top right, bottom left, bottom right.

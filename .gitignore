@@ -41,3 +41,4 @@ notebooks/euler_inverse_transform.ipynb
 notebooks/gaussian_quadrature.ipynb
 notebooks/euler_inverse_transform.ipynb
 src/FHTSource/fancy
+notebooks/.ipynb_checkpoints/fancy_transform-checkpoint.jl
