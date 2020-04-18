@@ -4,4 +4,4 @@
 
 - The [FHT package](https://www.cs.dartmouth.edu/~rockmore/FHT.htm) "A Fast Hermite Transform on the uniform grid"
 
-- Update: the method described in this paper is not stable so the package developpement is actually in stand-by.
+- Update: the method described in this paper is not stable so the package developpement is actually suspended.
